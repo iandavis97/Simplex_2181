@@ -274,10 +274,30 @@ void MyMesh::GenerateCone(float a_fRadius, float a_fHeight, int a_nSubdivisions,
 
 	Release();
 	Init();
+	//defining variables
+	float step = (2.0f*PI) / (float)a_nSubdivisions;
+	vector3 point1 = vector3(0.0f, 0.0f, 0.0f);//a new point that will be added to define the circle
+	vector3 point2;
+	vector3 point3;
+	vector3 point4;//tip of cone
+	float cosine;
+	float sine;
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
-	// -------------------------------
+	for (float angle = 0.0f; angle < 2.0f*PI; angle += step)
+	{
+		//making base circle
+		cosine = cos(angle);
+		sine = sin(angle);
+		point2 = vector3(point1.x + (cosine*a_fRadius), point1.y + (sine*a_fRadius), point1.z);
+		angle += step;
+		cosine = cos(angle);
+		sine = sin(angle);
+		point3 = vector3(point1.x + (cosine*a_fRadius), point1.y + (sine*a_fRadius), point1.z);
+		point4 = vector3(point1.x,point1.y,point1.z+a_fRadius*2);
+		angle -= step;
+		AddTri(point2, point1, point3);//creating tri to build base circle
+		AddTri(point4, point2, point3);//forming tip of cone
+	}
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
@@ -299,10 +319,63 @@ void MyMesh::GenerateCylinder(float a_fRadius, float a_fHeight, int a_nSubdivisi
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
-	// -------------------------------
+	//defining variables
+	float step = (2.0f*PI) / (float)a_nSubdivisions;
+	vector3 point1 = vector3(0.0f, 0.0f, 0.0f);//a new point that will be added to define the circle
+	vector3 point2;
+	vector3 point3;
+	float cosine;
+	float sine;
 
+	//making first circle
+	for (float angle = 0.0f; angle < 2.0f*PI; angle += step)
+	{
+		//making base circle
+		cosine = cos(angle);
+		sine = sin(angle);
+		point2 = vector3(point1.x + (cosine*a_fRadius), point1.y + (sine*a_fRadius), point1.z);
+		angle += step;
+		cosine = cos(angle);
+		sine = sin(angle);
+		point3 = vector3(point1.x + (cosine*a_fRadius), point1.y + (sine*a_fRadius), point1.z);
+		angle -= step;
+		AddTri(point2, point1, point3);//creating tri to build base circle
+	}
+	vector3 point4 = vector3(0.0f, 0.0f, 0.0f);//a new point that will be added to define the circle
+	vector3 point5;
+	vector3 point6;
+
+	//making second circle
+	for (float angle = 0.0f; angle < 2.0f*PI; angle += step)
+	{
+		point4.z = a_fHeight;
+		//making base circle
+		cosine = cos(angle);
+		sine = sin(angle);
+		point5 = vector3(point4.x + (cosine*a_fRadius), point4.y + (sine*a_fRadius), point4.z+a_fRadius);
+		angle += step;
+		cosine = cos(angle);
+		sine = sin(angle);
+		point6 = vector3(point4.x + (cosine*a_fRadius), point4.y + (sine*a_fRadius), point4.z+a_fRadius);
+		angle -= step;
+		AddTri(point5, point6, point4);//creating tri to build base circle
+	}
+
+	//making sides
+	for (float angle = 0.0f; angle < 2.0f*PI; angle += step)
+	{
+		cosine = cos(angle);
+		sine = sin(angle);
+		point2 = vector3(point1.x + (cosine*a_fRadius), point1.y + (sine*a_fRadius), point1.z);
+		point5 = vector3(point4.x + (cosine*a_fRadius), point4.y + (sine*a_fRadius), point4.z + a_fRadius);
+		angle += step;
+		cosine = cos(angle);
+		sine = sin(angle);
+		point3 = vector3(point1.x + (cosine*a_fRadius), point1.y + (sine*a_fRadius), point1.z);
+		point6 = vector3(point4.x + (cosine*a_fRadius), point4.y + (sine*a_fRadius), point4.z + a_fRadius);
+		angle -= step;
+		AddQuad(point5, point2, point6, point3);
+	}
 	// Adding information about color
 	CompleteMesh(a_v3Color);
 	CompileOpenGL3X();
@@ -329,9 +402,52 @@ void MyMesh::GenerateTube(float a_fOuterRadius, float a_fInnerRadius, float a_fH
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fOuterRadius * 2.0f, a_v3Color);
-	// -------------------------------
+	//defining variables
+	float step = (2.0f*PI) / (float)a_nSubdivisions;
+	vector3 point1 = vector3(0.0f, 0.0f, 0.0f);//a new point that will be added to define the circle
+	vector3 point2;
+	vector3 point3;
+	float cosine;
+	float sine;
+	vector3 point4 = vector3(0.0f, 0.0f, 0.0f);//a new point that will be added to define the circle
+	vector3 point5;
+	vector3 point6;
+	vector3 point7;
+	vector3 point8;
+	for (float angle = 0.0f; angle < 2.0f*PI; angle += step)
+	{
+		//inner rim
+		cosine = cos(angle);
+		sine = sin(angle);
+		point2 = vector3(point1.x + (cosine*a_fInnerRadius), point1.y + (sine*a_fInnerRadius), point1.z);
+		point5 = vector3(point4.x + (cosine*a_fInnerRadius), point4.y + (sine*a_fInnerRadius), point4.z + a_fHeight);
+		angle += step;
+		cosine = cos(angle);
+		sine = sin(angle);
+		point3 = vector3(point1.x + (cosine*a_fInnerRadius), point1.y + (sine*a_fInnerRadius), point1.z);
+		point6 = vector3(point4.x + (cosine*a_fInnerRadius), point4.y + (sine*a_fInnerRadius), point4.z + a_fHeight);
+		angle -= step;
+		AddQuad(point5, point2, point6, point3);
+		AddQuad(point2, point5, point3, point6);
+
+		//outer rim
+		cosine = cos(angle);
+		sine = sin(angle);
+		point5 = vector3(point1.x + (cosine*a_fOuterRadius), point1.y + (sine*a_fOuterRadius), point1.z);
+		point7 = vector3(point4.x + (cosine*a_fOuterRadius), point4.y + (sine*a_fOuterRadius), point4.z + a_fHeight);
+		angle += step;
+		cosine = cos(angle);
+		sine = sin(angle);
+		point6 = vector3(point1.x + (cosine*a_fOuterRadius), point1.y + (sine*a_fOuterRadius), point1.z);
+		point8 = vector3(point4.x + (cosine*a_fOuterRadius), point4.y + (sine*a_fOuterRadius), point4.z + a_fHeight);
+		angle -= step;
+		AddQuad(point7, point5, point8, point6);
+		AddQuad(point5, point7, point6, point8);
+
+		//connecting the rims
+		AddQuad(point5,point2,point6,point3);
+		AddQuad(point2, point5, point3, point6);
+	}
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
@@ -386,9 +502,62 @@ void MyMesh::GenerateSphere(float a_fRadius, int a_nSubdivisions, vector3 a_v3Co
 	Release();
 	Init();
 
-	// Replace this with your code
-	GenerateCube(a_fRadius * 2.0f, a_v3Color);
-	// -------------------------------
+	//defining variables
+	float step = (2.0f*PI) / (float)a_nSubdivisions;
+	vector3 point1 = vector3(0.0f, 0.0f, 0.0f);//a new point that will be added to define the circle
+	vector3 point2;
+	vector3 point3;
+	float cosine;
+	float sine;
+
+	//making first circle
+	for (float angle = 0.0f; angle < 2.0f*PI; angle += step)
+	{
+		//making base circle
+		cosine = cos(angle);
+		sine = sin(angle);
+		point2 = vector3(point1.x + (cosine*a_fRadius), point1.y + (sine*a_fRadius), point1.z);
+		angle += step;
+		cosine = cos(angle);
+		sine = sin(angle);
+		point3 = vector3(point1.x + (cosine*a_fRadius), point1.y + (sine*a_fRadius), point1.z);
+		angle -= step;
+		AddTri(point2, point1, point3);//creating tri to build base circle
+	}
+	vector3 point4 = vector3(0.0f, 0.0f, 0.0f);//a new point that will be added to define the circle
+	vector3 point5;
+	vector3 point6;
+
+	//making second circle
+	for (float angle = 0.0f; angle < 2.0f*PI; angle += step)
+	{
+		//making base circle
+		cosine = cos(angle);
+		sine = sin(angle);
+		point5 = vector3(point4.x + (cosine*a_fRadius), point4.y + (sine*a_fRadius), point4.z + a_fRadius);
+		angle += step;
+		cosine = cos(angle);
+		sine = sin(angle);
+		point6 = vector3(point4.x + (cosine*a_fRadius), point4.y + (sine*a_fRadius), point4.z + a_fRadius);
+		angle -= step;
+		AddTri(point5, point6, point4);//creating tri to build base circle
+	}
+
+	//making sides
+	for (float angle = 0.0f; angle < 2.0f*PI; angle += step)
+	{
+		cosine = cos(angle);
+		sine = sin(angle);
+		point2 = vector3(point1.x + (cosine*a_fRadius), point1.y + (sine*a_fRadius), point1.z);
+		point5 = vector3(point4.x + (cosine*a_fRadius), point4.y + (sine*a_fRadius), point4.z + a_fRadius);
+		angle += step;
+		cosine = cos(angle);
+		sine = sin(angle);
+		point3 = vector3(point1.x + (cosine*a_fRadius), point1.y + (sine*a_fRadius), point1.z);
+		point6 = vector3(point4.x + (cosine*a_fRadius), point4.y + (sine*a_fRadius), point4.z + a_fRadius);
+		angle -= step;
+		AddQuad(point5, point2, point6, point3);
+	}
 
 	// Adding information about color
 	CompleteMesh(a_v3Color);
