@@ -1,5 +1,10 @@
 #include "MyCamera.h"
 using namespace Simplex;
+//global variables
+float moveX = 0.0f;//moving in X axis
+float moveZ = 0.0f;//moving in Z axis
+float rotateX = 0.0f;//increment value to rotate camera horizontally
+float rotateY = 0.0f;//increment value to rotate camera vertically
 
 //Accessors
 void Simplex::MyCamera::SetPosition(vector3 a_v3Position) { m_v3Position = a_v3Position; }
@@ -132,6 +137,7 @@ void Simplex::MyCamera::SetPositionTargetAndUpward(vector3 a_v3Position, vector3
 void Simplex::MyCamera::CalculateViewMatrix(void)
 {
 	//Calculate the look at most of your assignment will be reflected in this method
+	//inverting view matrix to move to object space
 	m_m4View = glm::lookAt(m_v3Position, m_v3Target, glm::normalize(m_v3Above - m_v3Position)); //position, target, upward
 }
 
@@ -153,10 +159,50 @@ void Simplex::MyCamera::CalculateProjectionMatrix(void)
 void MyCamera::MoveForward(float a_fDistance)
 {
 	//The following is just an example and does not take in account the forward vector (AKA view vector)
-	m_v3Position += vector3(0.0f, 0.0f,-a_fDistance);
-	m_v3Target += vector3(0.0f, 0.0f, -a_fDistance);
-	m_v3Above += vector3(0.0f, 0.0f, -a_fDistance);
+	//m_v3Position += vector3(0.0f, 0.0f,-a_fDistance);
+	//m_v3Target += vector3(0.0f, 0.0f, -a_fDistance);
+	//m_v3Above += vector3(0.0f, 0.0f, -a_fDistance);
+
+	//preventing Gimbal lock
+	vector3 position = GetPosition();
+	quaternion m_qOrientation = glm::angleAxis(glm::radians(1.0f), vector3(glm::radians(position.x), glm::radians(position.y), glm::radians(position.z)));
+
+	moveZ += -a_fDistance;
+	SetPositionTargetAndUpward(vector3(moveX, 3.0f, moveZ), vector3(moveX + rotateX, 3.0f + rotateY, moveZ - 1.0f), vector3(0.0f, 1.0f, 0.0f)*m_qOrientation);
+	CalculateProjectionMatrix();
+	CalculateViewMatrix();
 }
 
 void MyCamera::MoveVertical(float a_fDistance){}//Needs to be defined
-void MyCamera::MoveSideways(float a_fDistance){}//Needs to be defined
+
+void MyCamera::MoveSideways(float a_fDistance)
+{
+	//preventing Gimbal lock
+	vector3 position = GetPosition();
+	quaternion m_qOrientation = glm::angleAxis(glm::radians(1.0f), vector3(glm::radians(position.x), glm::radians(position.y), glm::radians(position.z)));
+
+	moveX += a_fDistance;
+	SetPositionTargetAndUpward(vector3(moveX, 3.0f, moveZ), vector3(moveX + rotateX, 3.0f + rotateY, moveZ - 1.0f), vector3(0.0f, 1.0f, 0.0f)*m_qOrientation);
+	CalculateProjectionMatrix();
+	CalculateViewMatrix();
+}
+void MyCamera::ChangeYaw(float a_fDistance)
+{
+	//preventing Gimbal lock
+	vector3 position = GetPosition();
+	quaternion m_qOrientation = glm::angleAxis(glm::radians(1.0f), vector3(glm::radians(position.x), glm::radians(position.y), glm::radians(position.z)));
+
+	rotateY += -a_fDistance;
+
+	SetTarget(m_qOrientation*vector3(moveX + rotateX, 3.0f + rotateY, moveZ - 1.0f));
+}
+void MyCamera::ChangePitch(float a_fDistance)
+{
+	//preventing Gimbal lock
+	vector3 position = GetTarget();
+	quaternion m_qOrientation = glm::angleAxis(glm::radians(1.0f), vector3(glm::radians(position.x), glm::radians(position.y), glm::radians(position.z)));
+
+	rotateX += -a_fDistance;
+
+	SetTarget(m_qOrientation*vector3(moveX + rotateX, 3.0f + rotateY, moveZ - 1.0f)*m_qOrientation);
+}

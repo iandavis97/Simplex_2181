@@ -3,7 +3,7 @@ using namespace Simplex;
 void Application::InitVariables(void)
 {
 	//Change this to your name and email
-	m_sProgrammer = "Alberto Bobadilla - labigm@rit.edu";
+	m_sProgrammer = "Ian Davis - icd9008@rit.edu";
 
 	//Set the position and target of the camera
 	//(I'm at [0,0,10], looking at [0,0,0] and up is the positive Y axis)
@@ -29,8 +29,7 @@ void Application::Update(void)
 	ArcBall();
 
 	//Is the first person camera active?
-	CameraRotation();
-
+	CameraRotation(.03);
 	//Add objects to the Manager
 	for (int j = -50; j < 50; j += 2)
 	{

@@ -70,7 +70,17 @@ void Application::ProcessKeyPressed(sf::Event a_event)
 	switch (a_event.key.code)
 	{
 	default: break;
-	case sf::Keyboard::Space:
+	case sf::Keyboard::W://if W pressed, move camera forward
+		m_pCamera->MoveForward(.1f);
+		break;
+	case sf::Keyboard::S://if S pressed, move camera backward
+		m_pCamera->MoveForward(-.1f);
+		break;
+	case sf::Keyboard::D://if D pressed, move camera right
+		m_pCamera->MoveSideways(.1f);
+		break;
+	case sf::Keyboard::A://if A pressed, move camera left
+		m_pCamera->MoveSideways(-.1f);
 		break;
 	}
 	//gui
@@ -370,6 +380,8 @@ void Application::CameraRotation(float a_fSpeed)
 	}
 	//Change the Yaw and the Pitch of the camera
 	SetCursorPos(CenterX, CenterY);//Position the mouse in the center
+	m_pCamera->ChangeYaw(fAngleX);
+	m_pCamera->ChangePitch(fAngleY);
 }
 //Keyboard
 void Application::ProcessKeyboard(void)
