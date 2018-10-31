@@ -232,7 +232,7 @@ bool MyRigidBody::IsColliding(MyRigidBody* const a_pOther)
 	//if they are colliding check the SAT
 	if (bColliding)
 	{
-		if(SAT(a_pOther) != eSATResults::SAT_NONE)
+		if(SAT(a_pOther) == 0)
 			bColliding = false;// reset to false
 	}
 
@@ -287,6 +287,100 @@ uint MyRigidBody::SAT(MyRigidBody* const a_pOther)
 	(eSATResults::SAT_NONE has a value of 0)
 	*/
 
-	//there is no axis test that separates this two objects
-	return eSATResults::SAT_NONE;
+	//1. local object's axes
+	vector4 xLocal = vector4(1,0,0,0);
+	vector4 yLocal = vector4(0, 1, 0,0);
+	vector4 zLocal = vector4(0, 0, 1,0);
+
+	//2. move to world space, don't have scale or translation
+	std::vector<vector3>localList1;//used to store local axes for object1
+	std::vector<vector3>localList2;//used to store local axes for object2
+	vector3 x1= GetModelMatrix()*xLocal;
+	vector3 y1 = GetModelMatrix()*yLocal;
+	vector3 z1 = GetModelMatrix()*zLocal;
+	localList1.push_back(x1);
+	localList1.push_back(y1);
+	localList1.push_back(z1);
+	
+	//3. Do for 2nd object
+	vector3 x2 = a_pOther->GetModelMatrix()*xLocal;
+	vector3 y2 = a_pOther->GetModelMatrix()*yLocal;
+	vector3 z2 = a_pOther->GetModelMatrix()*zLocal;
+	localList2.push_back(x2);
+	localList2.push_back(y2);
+	localList2.push_back(z2);
+
+	float ra, rb;
+	matrix3 R, AbsR;
+	vector3 thisHalfWidth = vector3(GetHalfWidth().x, GetHalfWidth().y, GetHalfWidth().z);
+	vector3 otherHalfWidth = vector3(a_pOther->GetHalfWidth().x, a_pOther->GetHalfWidth().y, a_pOther->GetHalfWidth().z);
+	//compute rotation matrix expressing object2 in object1's coordination frame
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+			R[i][j] = glm::dot(localList1[i], localList2[j]);
+	
+	//compute translation vector t
+	vector3 t = a_pOther->GetCenterLocal() - GetCenterLocal();
+
+	//bring translation in object1's coordinate frame
+	t = vector3(glm::dot(t,localList1[0]), glm::dot(t, localList1[2]), glm::dot(t, localList1[2]));
+
+	//compute common subexpressions
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+			AbsR[i][j] = glm::abs(R[i][j]);
+
+	//testing axes
+	for (int i = 0; i < 3; i++)
+	{
+		ra = thisHalfWidth[i];
+		rb = otherHalfWidth[0] * AbsR[i][0] + otherHalfWidth[1] * AbsR[i][1] + otherHalfWidth[2] * AbsR[i][2];
+		if (glm::abs(t[i]) > ra + rb) return 0;
+	}
+
+	for (int i = 0; i < 3; i++)
+	{
+		ra = thisHalfWidth[0] * AbsR[0][i] + thisHalfWidth[1] * AbsR[1][i] + thisHalfWidth[2] * AbsR[2][i];
+		rb = otherHalfWidth[i];
+		if (glm::abs(t[0] * R[0][i] + t[1] * R[1][i] + t[2] * R[2][i]) > ra + rb) return 0;
+	}
+
+	ra = thisHalfWidth[1] * AbsR[2][0] + thisHalfWidth[2] * AbsR[1][0];
+	rb = otherHalfWidth[1] * AbsR[0][2] + otherHalfWidth[2] * AbsR[0][1];
+	if (glm::abs(t[2] * R[1][0] - t[1] * R[2][0]) > ra + rb) return 0;
+
+	ra = thisHalfWidth[1] * AbsR[2][1] + thisHalfWidth[2] * AbsR[1][1];
+	rb = otherHalfWidth[0] * AbsR[0][2] + otherHalfWidth[2] * AbsR[0][0];
+	if (glm::abs(t[2] * R[1][1] - t[1] * R[2][1]) > ra + rb) return 0;
+
+	ra = thisHalfWidth[1] * AbsR[2][2] + thisHalfWidth[2] * AbsR[1][2];
+	rb = otherHalfWidth[0] * AbsR[0][1] + otherHalfWidth[1] * AbsR[0][0];
+	if (glm::abs(t[2] * R[1][2] - t[1] * R[2][2]) > ra + rb) return 0;
+
+	ra = thisHalfWidth[0] * AbsR[2][0] + thisHalfWidth[2] * AbsR[0][0];
+	rb = otherHalfWidth[1] * AbsR[1][2] + otherHalfWidth[2] * AbsR[1][1];
+	if (glm::abs(t[0] * R[2][0] - t[2] * R[0][0]) > ra + rb) return 0;
+
+	ra = thisHalfWidth[0] * AbsR[2][1] + thisHalfWidth[2] * AbsR[0][1];
+	rb = otherHalfWidth[0] * AbsR[1][2] + otherHalfWidth[2] * AbsR[1][0];
+	if (glm::abs(t[0] * R[2][1] - t[2] * R[0][1]) > ra + rb) return 0;
+
+	ra = thisHalfWidth[0] * AbsR[2][2] + thisHalfWidth[2] * AbsR[0][2];
+	rb = otherHalfWidth[0] * AbsR[1][1] + otherHalfWidth[1] * AbsR[1][0];
+	if (glm::abs(t[0] * R[2][2] - t[2] * R[0][2]) > ra + rb) return 0;
+
+	ra = thisHalfWidth[0] * AbsR[1][0] + thisHalfWidth[1] * AbsR[0][0];
+	rb = otherHalfWidth[1] * AbsR[2][2] + otherHalfWidth[2] * AbsR[2][1];
+	if (glm::abs(t[1] * R[0][0] - t[0] * R[1][0]) > ra + rb) return 0;
+
+	ra = thisHalfWidth[0] * AbsR[1][1] + thisHalfWidth[1] * AbsR[0][1];
+	rb = otherHalfWidth[0] * AbsR[2][2] + otherHalfWidth[2] * AbsR[2][0];
+	if (glm::abs(t[1] * R[0][1] - t[0] * R[1][1]) > ra + rb) return 0;
+
+	ra = thisHalfWidth[0] * AbsR[1][2] + thisHalfWidth[1] * AbsR[0][2];
+	rb = otherHalfWidth[0] * AbsR[2][1] + otherHalfWidth[1] * AbsR[2][0];
+	if (glm::abs(t[1] * R[0][2] - t[0] * R[1][2]) > ra + rb) return 0;
+
+	//since no seperating axis found, must be intersecting
+	return 1;
 }
